@@ -26,51 +26,30 @@
 
 package main
 
-import "os"
-import "fmt"
-import "strconv"
-import "strings"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
-func main() {
-	if len(os.Args) > 1 {
-		var action string = os.Args[1]
-		var arguments []string = os.Args[1:]
-		var verbose bool = false
-
-		if action == "-help" {
-			display_help()
-			os.Exit(0)
-		} else if action == "-verbose" {
-			arguments = os.Args[2:]
-			verbose = true
-		}
-
-		spark_numbers(arguments, verbose)
-		os.Exit(0)
-	} else {
-		display_help()
-		fmt.Printf("\nError. Values were not specified\n")
-		os.Exit(1)
-	}
-}
-
-func display_help() {
-	fmt.Println("Spark")
-	fmt.Println("  http://cixtor.com/")
-	fmt.Println("  https://github.com/cixtor/mamutools")
-	fmt.Println("  http://en.wikipedia.org/wiki/Sparkline")
+func DisplayHelp() {
+	fmt.Println("Sparkline")
+	fmt.Println("  https://cixtor.com/")
+	fmt.Println("  https://github.com/cixtor/sparkline")
+	fmt.Println("  https://en.wikipedia.org/wiki/Sparkline")
+	fmt.Println("  https://en.wikipedia.org/wiki/Kagi_chart")
 	fmt.Println("Usage:")
-	fmt.Println("  spark [-help|-verbose] values")
+	fmt.Println("  spark [-h|-v] [values]")
 	fmt.Println("Examples:")
 	fmt.Println("  spark 1 5 22 13 53")
 	fmt.Println("  spark $(echo 9 13 5 17 1)")
 	fmt.Println("  spark $(seq 0 50 | sort -R)")
 }
 
-func spark_numbers(arguments []string, verbose bool) {
-	var numbers []float64 = get_numbers(arguments)
-	var max_num float64 = max_slice(numbers)
-	var num_len int = len(numbers)
+func SparkNumbers(arguments []string, verbose bool) int {
+	var numbers []float64 = GetNumbers(arguments)
+	var maxNum float64 = MaxSlice(numbers)
+	var numLen int = len(numbers)
 	var sparks = make([]rune, 0)
 
 	// Unicode representation of the sparks.
@@ -86,48 +65,48 @@ func spark_numbers(arguments []string, verbose bool) {
 	}
 
 	// Get the sparkline for each number.
-	for i := 0; i < num_len; i++ {
-		var unit int = int((numbers[i] * 7) / max_num)
+	for i := 0; i < numLen; i++ {
+		var unit int = int((numbers[i] * 7) / maxNum)
 		sparks = append(sparks, sticks[unit])
 	}
 
 	if verbose {
-		var min_num float64 = min_slice(numbers)
-		var ellipsis_arr []string
-		var ellipsis_limit int = num_len
-		var add_three_dots bool = false
-		var num_ellipsis string
+		var minNum float64 = MinSlice(numbers)
+		var ellipsisLimit int = numLen
+		var addThreeDots bool = false
+		var ellipsisList []string
 
-		if num_len > 15 {
-			ellipsis_limit = 15
-			add_three_dots = true
+		if numLen > 15 {
+			ellipsisLimit = 15
+			addThreeDots = true
 		}
 
-		for j := 0; j < ellipsis_limit; j++ {
-			ellipsis_arr = append(ellipsis_arr, float_to_string(numbers[j]))
+		for j := 0; j < ellipsisLimit; j++ {
+			ellipsisList = append(ellipsisList, Float2String(numbers[j]))
 		}
 
-		num_ellipsis = strings.Join(ellipsis_arr, ", ")
-
-		if add_three_dots {
-			num_ellipsis += " ..."
+		if addThreeDots {
+			ellipsisList = append(ellipsisList, "\u2026")
 		}
 
-		fmt.Printf("Spark\n")
-		fmt.Printf("Total numbers: %d\n", num_len)
-		fmt.Printf("Min: %.2f ; Max: %.2f\n", min_num, max_num)
-		fmt.Printf("Numbers: %s\n", num_ellipsis)
+		fmt.Println("Sparkline")
+		fmt.Println("Quantity:", numLen)
+		fmt.Println("Minimum:", minNum)
+		fmt.Println("Maximum:", maxNum)
+		fmt.Println("Numbers:", ellipsisList)
 	}
 
 	// Print the sparklines in the console.
-	for i := 0; i < num_len; i++ {
-		fmt.Printf("%s", string(sparks[i]))
+	var output string
+	for i := 0; i < numLen; i++ {
+		output += string(sparks[i])
 	}
+	fmt.Println(output)
 
-	fmt.Printf("\n")
+	return 0
 }
 
-func get_numbers(letters []string) []float64 {
+func GetNumbers(letters []string) []float64 {
 	var numbers []float64
 	var list_len int = len(letters)
 
@@ -139,7 +118,7 @@ func get_numbers(letters []string) []float64 {
 	return numbers
 }
 
-func max_slice(list []float64) float64 {
+func MaxSlice(list []float64) float64 {
 	var max float64
 	var list_len int = len(list)
 
@@ -154,7 +133,7 @@ func max_slice(list []float64) float64 {
 	return max
 }
 
-func min_slice(list []float64) float64 {
+func MinSlice(list []float64) float64 {
 	var min float64
 	var list_len int = len(list)
 
@@ -169,6 +148,23 @@ func min_slice(list []float64) float64 {
 	return min
 }
 
-func float_to_string(number float64) string {
+func Float2String(number float64) string {
 	return strconv.FormatFloat(number, 'f', 1, 64)
+}
+
+func main() {
+	if len(os.Args) < 2 || os.Args[1] == "-h" {
+		DisplayHelp()
+		os.Exit(2)
+	}
+
+	var arguments []string = os.Args[1:]
+	var verbose bool = false
+
+	if os.Args[1] == "-v" {
+		arguments = os.Args[2:]
+		verbose = true
+	}
+
+	os.Exit(SparkNumbers(arguments, verbose))
 }
